@@ -5,6 +5,7 @@
 #' @param repo e.g. if repo_location is github: "chasemc/demoApp" ; if repo_location is local: "C:/Users/chase/demoApp"
 #' @param repos cran like repository package dependencies will be retrieved from
 #' @param package_install_opts further arguments to remotes::install_github, install_gitlab, install_bitbucket, or install_local
+#' @param r_bitness The bitness of the R installation you want to use (i386 or x64)
 #'
 #' @return App name
 
@@ -35,14 +36,14 @@
 #'                  build_vignettes = TRUE)
 #' }
 #'
-install_user_app <- function(library_path = NULL,
+install_user_app_new <- function(library_path = NULL,
                              repo_location = "github",
                              repo = "chasemc/IDBacApp",
                              repos = cran_like_url,
-                             package_install_opts = NULL){
+                             package_install_opts = NULL,
+                             r_bitness = "x64"){
 
   accepted_sites <- c("github", "gitlab", "bitbucket", "local")
-
 
   if (is.null(library_path)) {
     stop("install_user_app() requires library_path to be set.")
@@ -70,7 +71,6 @@ install_user_app <- function(library_path = NULL,
       stop("package_install_opts  must be a list of arguments.")
     }
   }
-
   remotes_code <- as.character(glue::glue("install_{repo_location}"))
 
 
@@ -89,6 +89,7 @@ install_user_app <- function(library_path = NULL,
   if (identical(os, "win")) {
     rscript_path <- file.path(dirname(library_path),
                               "bin",
+                              r_bitness,
                               "Rscript.exe")
   }
 
@@ -103,44 +104,35 @@ install_user_app <- function(library_path = NULL,
 
   }
 
-  tmp_file <- tempfile()
-  save(list = c("remotes_code",
-                "passthr"),
-       file = tmp_file)
 
 
+  # We're copying remotes to the app library since some apps require remotes
   # To-do: check if package to be installed (or any of its dependencies, like golem) requires remotes
   # If not use the tempfile again
   remotes_library <- copy_remotes_package(library_path)
 
-  electricshine_library <- copy_electricshine_package()
-
-
-  old_R_LIBS <- Sys.getenv("R_LIBS")
-  old_R_LIBS_USER <- Sys.getenv("R_LIBS_USER")
-  old_R_LIBS_SITE <- Sys.getenv("R_LIBS_SITE")
-
-  Sys.setenv(R_LIBS=library_path)
-  Sys.setenv(R_LIBS_USER=remotes_library)
-  Sys.setenv(R_LIBS_SITE=electricshine_library)
-  Sys.setenv(ESHINE_PASSTHRUPATH=tmp_file)
-  Sys.setenv(ESHINE_remotes_code=remotes_code)
-
+  electricshine_library <- installed.packages()["electricShine", "LibPath"]
+  # We're not using copy_electricshine_package() since that isn't necessary
+  
+  # Don't mess about with the environment
+  # This causes bugs when you're running 32-bits R but installing on 64-bits R or the opposite
+  
   tmp_file2 <- tempfile()
   file.create(tmp_file2)
   Sys.setenv(ESHINE_package_return=tmp_file2)
+  
+  arguments <- list(
+    libpaths =c(library_path, remotes_library),
+    electricshine_library = electricshine_library,
+    passthr=passthr,
+    ESHINE_remotes_code=remotes_code,
+    ESHINE_package_return=tmp_file2
+  )
 
   message("Installing your Shiny package into electricShine framework.")
 
-  system_install_pkgs(rscript_path)
+  system_install_pkgs_new(rscript_path, arguments)
 
-  on.exit({
-    Sys.setenv(R_LIBS=old_R_LIBS)
-    Sys.setenv(R_LIBS_USER=old_R_LIBS_USER)
-    Sys.setenv(R_LIBS_SITE=old_R_LIBS_SITE)
-    Sys.setenv(ESHINE_PASSTHRUPATH="")
-    Sys.setenv(ESHINE_remotes_code="")
-  })
   message("Finshed: Installing your Shiny package into electricShine framework")
 
   # TODO: break into unit-testable function
@@ -211,32 +203,27 @@ copy_electricshine_package <- function(){
 #' Run package installation using the newly-installed R
 #'
 #' @param rscript_path path to newly-installed R's executable
+#' @param arguments arguments to the install script
 #'
 #' @return nothing
 #'
-system_install_pkgs <- function(rscript_path){
-
+system_install_pkgs_new <- function(rscript_path, arguments){
+  
   os <- electricShine::get_os()
-
-  if (identical(os, "win")) {
-    system2(rscript_path,
-            c(
-              "-e",
-              "electricShine::install_package()"),
-            wait = TRUE,
-            stdout = "")
-  }
-
-  if (identical(os, "mac")) {
-    system2(rscript_path,
-            c(
-              " -vanilla ",
-              "-e ",
-              "'",
-              "electricShine::install_package()",
-              "'"),
-            wait = TRUE,
-            stdout = "")
-  }
-
+  arg_file <- tempfile()
+  save(arguments, file = arg_file)
+  r_file <- tempfile()
+  cat(file = r_file, # To consider: make this a separate file
+      "args = commandArgs(trailingOnly=TRUE)\n",
+      "load(args[1])\n",
+      "library(electricShine, lib.loc = arguments$electricshine_library)\n",
+      ".libPaths(arguments$libpaths)\n",
+      "electricShine::install_package_new(arguments)"
+      )
+  system2(rscript_path,
+            shQuote(c(r_file, arg_file)),
+          wait = TRUE,
+          stdout = "")
+  unlink(r_file)
+  unlink(arg_file)
 }

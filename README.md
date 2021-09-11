@@ -1,14 +1,26 @@
-[![Lifecycle:
-Maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
-[![Build Status](https://dev.azure.com/chasec288/electricShine/_apis/build/status/chasemc.electricShine?branchName=master)](https://dev.azure.com/chasec288/electricShine/_build/latest?definitionId=4&branchName=master)
-
 # electricShine  <img src="man/figures/logo.png" align="right" alt="" width="120" />
+
+# This is a fork of electricShine with major changes that have not been properly tested or documented. It does contain a significant number of bug fixes not present in the current GitHub version. Use at your own risk.
+
+I apologize to everyone considering to use this. Unfortunately, I do not have the time to properly do a fork, nor to properly isolate the bugs from the added features and submit pull requests for all of them.
+
+Added features include installing either 32- or 64-bits R and not both and setting a fixed port (to make cookies/localStorage work).
+
+Changed features are the loading screen, mostly reverted some changes from the original one by Dirk Schumacher, and work in progress to get it to display errors when R fails to start.
+
+Bugfixes include missing variables when installing node, errors with package installation when attempting to use 32-bits R, not closing R properly when quitting the Electron app, building the Electron app failing if the app was on a different drive than the drive `cmd` opened on by default (always add `/D` to `cd` on windows), webpack errors, and I'm pretty sure I'm missing some.
+
+Fixed in a dubious way includes the app now includes devtools always, since the package failed to install it because it requires devtools itself to install stuff, and all golem apps require devtools since golem requires it. Probably should use pak instead to install packages or do recursive dependency checking, but I failed to get that working...
+
+Please refer to the original package for support/feature requests. I will try to support development of this as long as my schedule allows for it. This is a one-off fork and not intended for more development.
 
 ## Installation
 ```
 # install.packages("remotes")
-remotes::install_github("chasemc/electricShine")
+remotes::install_github("erikvona/electricShine")
 ```
+
+<sub>Everything below here is unmodified</sub>
 
 ## Purpose
 

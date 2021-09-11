@@ -12,7 +12,9 @@
 modify_background_js <- function(background_js_path,
                                  my_package_name,
                                  function_name,
-                                 r_path){
+                                 r_path,
+                                 r_bitness = "x64",
+                                 tcp_port = 0){
   if (!file.exists(background_js_path)) {
     stop("addFunctionToBackgroundJs() failed because background_js_path didn't point to an existing file.")
   }
@@ -22,7 +24,8 @@ modify_background_js <- function(background_js_path,
   R_SHINY_FUNCTION <- paste0(my_package_name, 
                              "::",
                              function_name)
-  
+  R_BITNESS <- force(r_bitness)
+  TCP_PORT <- force(tcp_port)
   background_js_contents <- sapply(background_js_contents,
                                    function(x) {
                                      glue::glue(x, 

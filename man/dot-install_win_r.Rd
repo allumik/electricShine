@@ -4,7 +4,7 @@
 \alias{.install_win_r}
 \title{Install R for Windows at given path}
 \usage{
-.install_win_r(win_installer_path, app_root_path)
+.install_win_r(win_installer_path, app_root_path, bitness = "x64")
 }
 \arguments{
 \item{win_installer_path}{path of Windows R installer}

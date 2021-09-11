@@ -4,9 +4,14 @@
 \alias{install_r}
 \title{Install R from MRAN date into electricShine folder}
 \usage{
-install_r(cran_like_url = NULL, app_root_path,
-  mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz",
-  permission_to_install = FALSE)
+install_r(
+  cran_like_url = NULL,
+  app_root_path,
+ 
+    mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz",
+  permission_to_install = FALSE,
+  bitness = "x64"
+)
 }
 \arguments{
 \item{cran_like_url}{CRAN-like url e.g. https://cran.r-project.org/bin/windows/base}

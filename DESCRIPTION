@@ -21,7 +21,6 @@ Imports:
     stringr,
     withr,
     openssl
-RoxygenNote: 7.1.0
 Suggests: 
     testthat (>= 2.1.0),
     covr,
@@ -30,3 +29,4 @@ Suggests:
 VignetteBuilder: knitr
 URL: https://github.com/chasemc/electricShine
 BugReports: https://github.com/chasemc/electricShine/issues
+RoxygenNote: 7.1.1

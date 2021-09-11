@@ -4,8 +4,14 @@
 \alias{create_build_directory}
 \title{Create a directory for creating the new app and copy template of files}
 \usage{
-create_build_directory(appName, description, productName, semanticVersion,
-  appPath, functionName)
+create_build_directory(
+  appName,
+  description,
+  productName,
+  semanticVersion,
+  appPath,
+  functionName
+)
 }
 \arguments{
 \item{appName}{name of app}

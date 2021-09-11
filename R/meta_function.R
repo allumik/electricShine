@@ -25,6 +25,8 @@
 #' @param nodejs_version nodejs version to install
 #' @param permission automatically grant permission to install nodejs and R 
 #' @param mac_url url to mac OS tar.gz 
+#' @param r_bitness The bitness of the R installation you want to use (i386 or x64)
+#' @param tcp_port The port Electron and R are going to run at. Select 0 for a random port, avoid privileged ports
 #'
 #' @export
 #'
@@ -44,7 +46,10 @@ electrify <- function(app_name = NULL,
                       nodejs_path = file.path(system.file(package = "electricShine"), "nodejs"),
                       nodejs_version = "v12.16.2",
                       permission = FALSE,
-                      mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz"){
+                      mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz",
+                      r_bitness = c("x64", "i386"),
+                      tcp_port = 0
+                      ){
   
   
   
@@ -112,7 +117,7 @@ electrify <- function(app_name = NULL,
   cran_like_url <- construct_mran_url(mran_date = mran_date,
                                       cran_like_url = cran_like_url)
   
-  
+  r_bitness = match.arg(r_bitness)
   
   # Create top-level build folder for app  ----------------------------------
   
@@ -126,7 +131,8 @@ electrify <- function(app_name = NULL,
   electricShine::install_r(cran_like_url = cran_like_url,
                            app_root_path = app_root_path,
                            mac_url = mac_url,
-                           permission_to_install = permission_to_install_r)
+                           permission_to_install = permission_to_install_r,
+                           bitness = r_bitness)
   
   # Trim R's size -----------------------------------------------------------
   electricShine::trim_r(app_root_path = app_root_path)
@@ -165,21 +171,23 @@ electrify <- function(app_name = NULL,
   
   if (!base::is.null(git_host)) {
     
-    my_package_name <-  electricShine::install_user_app(library_path = library_path,
+    my_package_name <-  electricShine::install_user_app_new(library_path = library_path,
                                                         repo_location = git_host,
                                                         repo = git_repo,
                                                         repos = cran_like_url,
-                                                        package_install_opts = package_install_opts)
+                                                        package_install_opts = package_install_opts,
+                                                        r_bitness = r_bitness)
   }
   
   
   if (!is.null(local_package_path)) {
     
-    my_package_name <- electricShine::install_user_app(library_path = library_path ,
+    my_package_name <- electricShine::install_user_app_new(library_path = library_path ,
                                                        repo_location = "local",
                                                        repo = local_package_path,
                                                        repos = cran_like_url,
-                                                       package_install_opts = package_install_opts)
+                                                       package_install_opts = package_install_opts,
+                                                       r_bitness = r_bitness)
   }
   
   
@@ -217,7 +225,9 @@ electrify <- function(app_name = NULL,
                                                                      "background.js"),
                                       my_package_name = my_package_name,
                                       function_name = function_name,
-                                      r_path = base::dirname(library_path))
+                                      r_path = base::dirname(library_path),
+                                      r_bitness = r_bitness,
+                                      tcp_port = tcp_port)
   
   
   # Download and unzip nodejs -----------------------------------------------

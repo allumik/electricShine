@@ -37,8 +37,7 @@ run_build_release <- function(nodejs_path = file.path(system.file(package = "ele
   if (base::identical(os, "win")) {
     
 
-    message(system("cmd.exe",
-                   glue::glue('cd {quoted_app_path} && {quoted_npm_path} install --scripts-prepend-node-path'),
+    message(system(glue::glue('cmd.exe /C cd /D {quoted_app_path} && {quoted_npm_path} install --scripts-prepend-node-path'),
                    invisible = FALSE,
                    minimized = F,
                    wait = T,
@@ -48,8 +47,8 @@ run_build_release <- function(nodejs_path = file.path(system.file(package = "ele
     
     base::message("Building your Electron app.")
     
-    base::message(system("cmd.exe",
-                   glue::glue('cd {quoted_app_path} && {quoted_npm_path} run release --scripts-prepend-node-path'),
+    base::message(system(
+                   glue::glue('cmd.exe /C cd /D {quoted_app_path} && {quoted_npm_path} run release --scripts-prepend-node-path'),
                    invisible = FALSE,
                    minimized = F,
                    wait = T,
@@ -75,4 +74,3 @@ run_build_release <- function(nodejs_path = file.path(system.file(package = "ele
                    ignore.stderr = F))
   }
 }
-

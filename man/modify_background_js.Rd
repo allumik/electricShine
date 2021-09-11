@@ -4,8 +4,13 @@
 \alias{modify_background_js}
 \title{Modify background.js to include the call to the shiny app}
 \usage{
-modify_background_js(background_js_path, my_package_name, function_name,
-  r_path)
+modify_background_js(
+  background_js_path,
+  my_package_name,
+  function_name,
+  r_path,
+  r_bitness
+)
 }
 \arguments{
 \item{background_js_path}{path to the final background.js, not the one in inst/...}

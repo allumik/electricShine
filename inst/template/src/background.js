@@ -31,9 +31,8 @@ const {
   BrowserWindow
 } = require('electron');
 
-import jetpack from "fs-jetpack";
-import execa from 'execa'
 import path from "path";
+const { exec } = require('child_process');
 
 const MACOS = "darwin";
 const WINDOWS = "win32";
@@ -62,8 +61,8 @@ var net = require('net');
 var srv = net.createServer(function(sock) {
   sock.end('Hello world\n');
 });
-srv.listen(0, function() {
-  console.log('Listening on port ' + srv.address().port);
+srv.listen(<?<TCP_PORT>?>, function() {
+ console.log('Listening on port ' + srv.address().port);
 });
 
 let NODER = null
@@ -72,7 +71,7 @@ if (process.platform == WINDOWS) {
   var rResources = path.join(app.getAppPath(), 'app', 'r_lang');
   //Unfortunately on MacOS paths are hardcoded into 
   //Rscript but it's in binary so have to use R instead
-  NODER = path.join(rResources, "bin", "x64", "Rterm.exe");
+  NODER = path.join(rResources, "bin", "<?<R_BITNESS>?>", "rscript.exe");
 }
 
 if (process.platform == MACOS) {
@@ -81,7 +80,7 @@ if (process.platform == MACOS) {
   //Unfortunately on MacOS paths are hardcoded into 
   //Rscript but it's in binary so have to use R instead
 
-  NODER = path.join(rResources, "bin", "R");
+  NODER = path.join(rResources, "bin", "rscript");
 }
 
 let rShinyProcess = null
@@ -97,6 +96,7 @@ const createWindow = (shinyUrl) => {
     width: 800,
     height: 600,
     show: false,
+    autHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -152,8 +152,8 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 
   let shinyProcessAlreadyDead = false
 
-  rShinyProcess = execa(NODER,
-    ['-vanilla -e', '<?<R_SHINY_FUNCTION>?>(options = list(port = ' + srv.address().port + '))'], {
+  rShinyProcess = exec(NODER + ' -e <?<R_SHINY_FUNCTION>?>(options=list(port='+srv.address().port+'))',
+     {
       env: {
         //Necessary for letting R know where it is and ensure we're not using another R 
         'WITHIN_ELECTRON': 'T', // can be used within an app to implement specific behaviour
@@ -164,11 +164,32 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
         'R_LIBS_SITE': path.join(rResources, "library"),
         'R_LIB_PATHS': path.join(rResources, "library")
       }
-    }).catch((e) => {
-    shinyProcessAlreadyDead = true
-    onError(e)
-  })
-
+    },
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+    }
+   )
+   rShinyProcess.stderr.on('readable', function() {
+    // There is some data to read now.
+    let data;
+  
+    while (data = this.read()) {
+      console.log(data);
+    }
+  });
+  rShinyProcess.stdout.on('readable', function() {
+    // There is some data to read now.
+    let data;
+  
+    while (data = this.read()) {
+      console.log(data);
+    }
+  });
 
 
   for (let i = 0; i <= 10; i++) {
@@ -183,19 +204,18 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 
         mainWindow.webContents.executeJavaScript('window.Shiny.shinyapp.isConnected()', true)
           .then((result) => {
+            mainWindow.webContents.executeJavaScript('window.Shiny.setInputValue("TerminateOnExit", true);')
             shinyRunning = true
-            mainWindow.show()
+            mainWindow.maximize()
+            mainWindow.focus()
             loadingSplashScreen.close()
             console.log('Trying to connect to Shiny... connected')
           })
           .catch((result) => {
-
-          if (shinyRunning === false) {
-            console.log('Trying to connect to Shiny... ' + i)
-          }
-
+            if (shinyRunning === false) {
+              console.log('Trying to connect to Shiny... ' + i)
+            }
           })
-
       } 
     } catch (e) {
 
@@ -311,14 +331,18 @@ app.on('window-all-closed', () => {
   // We overwrite the behaviour for now as it makes things easier
   // remove all events
   shutdown = true
-  app.quit()
 
+  app.quit()
+})
+
+// App close handler, we want to kill shiny here and not on window close
+app.on('before-quit', () => {
   // kill the process, just in case
   // usually happens automatically if the main process is killed
   try {
     rShinyProcess.kill()
   } catch (e) {}
-})
+});
 
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the

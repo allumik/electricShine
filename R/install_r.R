@@ -10,7 +10,8 @@
 install_r <- function(cran_like_url = NULL,
                       app_root_path,
                       mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz",
-                      permission_to_install  = FALSE){
+                      permission_to_install  = FALSE,
+                      bitness = "x64"){
   
   
   
@@ -47,7 +48,8 @@ install_r <- function(cran_like_url = NULL,
       win_installer_path <- .download_r(d_url = win_url)
       
       rlang_path <- .install_win_r(win_installer_path,
-                                   app_root_path)
+                                   app_root_path,
+                                   bitness)
       
       rlang_path <- base::file.path(rlang_path,
                                     "bin",
@@ -131,7 +133,8 @@ install_r <- function(cran_like_url = NULL,
 #' @return NA, installs R to path
 
 .install_win_r <- function(win_installer_path,
-                           app_root_path){
+                           app_root_path,
+                           bitness = "x64"){
   
   # create the path R installer will install to
   install_r_to_path <- base::file.path(app_root_path, 
@@ -151,7 +154,7 @@ install_r <- function(cran_like_url = NULL,
   quoted_win_installer_path <- base::shQuote(win_installer_path)
   
   # install R
-  base::system(glue::glue("{quoted_win_installer_path} /SILENT /DIR={quoted_install_r_to_path}"))
+  base::system(glue::glue("{quoted_win_installer_path} /SILENT /DIR={quoted_install_r_to_path} /components=\"\"main,{bitness},translations\"\""))
   
   return(install_r_to_path)
 }
