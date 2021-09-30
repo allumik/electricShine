@@ -20,7 +20,8 @@ Imports:
     remotes,
     stringr,
     withr,
-    openssl
+    openssl,
+    zip
 Suggests: 
     testthat (>= 2.1.0),
     covr,

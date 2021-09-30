@@ -157,4 +157,3 @@ install_nodejs <- function(node_url = "https://nodejs.org/dist",
                                mustWork = TRUE)
   return(nodejs_path)
 }
-

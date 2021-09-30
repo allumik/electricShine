@@ -4,7 +4,7 @@
 
 I apologize to everyone considering to use this. Unfortunately, I do not have the time to properly do a fork, nor to properly isolate the bugs from the added features and submit pull requests for all of them.
 
-Added features include installing either 32- or 64-bits R and not both and setting a fixed port (to make cookies/localStorage work).
+Added features include installing either 32- or 64-bits R and not both and setting a fixed port (to make cookies/localStorage work), forwarding `stderr` and `stdout` to `input$R_ELECTRON_STDERR` and `input$R_ELECTRON_STDOUT`, logging all R output, an option to include a portable Pandoc (based on RInno code but fixed)
 
 Changed features are the loading screen, mostly reverted some changes from the original one by Dirk Schumacher, and work in progress to get it to display errors when R fails to start.
 
@@ -111,4 +111,3 @@ One of the main reasons I wrote this package was to allow easy CD, and `{electri
 
 - https://github.com/chasemc/IDBacApp
 - https://github.com/chasemc/demoApp
-

@@ -28,18 +28,19 @@ SOFTWARE.*/
 const {
   app,
   session,
-  BrowserWindow
+  BrowserWindow,
+  Menu
 } = require('electron');
 
 import path from "path";
 const { exec } = require('child_process');
 
-const MACOS = "darwin";
+const MACOS = "darwin"; // Erikvona: I'm 99% sure the MacOS support is now even more thoroughly broken
 const WINDOWS = "win32";
 
 const fs = require('fs');
 const backgroundColor = '#2c3e50'
-
+//Menu.setApplicationMenu(null);
 
 const waitFor = (milliseconds) => {
   return new Promise((resolve, _reject) => {
@@ -62,15 +63,13 @@ var srv = net.createServer(function(sock) {
   sock.end('Hello world\n');
 });
 srv.listen(<?<TCP_PORT>?>, function() {
- console.log('Listening on port ' + srv.address().port);
+ console.log('Electron listening on port ' + srv.address().port);
 });
 
 let NODER = null
 // folder above "bin/RScript"
 if (process.platform == WINDOWS) {
   var rResources = path.join(app.getAppPath(), 'app', 'r_lang');
-  //Unfortunately on MacOS paths are hardcoded into 
-  //Rscript but it's in binary so have to use R instead
   NODER = path.join(rResources, "bin", "<?<R_BITNESS>?>", "rscript.exe");
 }
 
@@ -79,7 +78,6 @@ if (process.platform == MACOS) {
   var rResources = path.join(app.getAppPath(), 'app', 'r_lang', "Library", "Frameworks", "R.framework", "Versions", rVer.toString(), 'Resources');
   //Unfortunately on MacOS paths are hardcoded into 
   //Rscript but it's in binary so have to use R instead
-
   NODER = path.join(rResources, "bin", "rscript");
 }
 
@@ -96,7 +94,6 @@ const createWindow = (shinyUrl) => {
     width: 800,
     height: 600,
     show: false,
-    autHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -150,8 +147,27 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     }
   }
 
-  let shinyProcessAlreadyDead = false
-
+  let shinyProcessAlreadyDead = false;
+  let shinyConnected = false;
+  let logRMessages = function(message, channel){
+    // Unfortunately, can't get IPC to work with Shiny, so we're passing base64 strings
+    if(channel == 'stderr'){
+      log.info('R stderr: ' + message) // R uses stderr for all normal messages
+      if(shinyConnected){
+        mainWindow.webContents.executeJavaScript(
+          'window.Shiny.setInputValue(\'R_STDERR_ELECTRON\', atob(\'' + Buffer.from(message, 'ascii').toString('base64') + '\'),  {priority: "event"});null;'
+        )
+      }
+    }else if(channel == 'stdout'){
+      log.info('R stdout: ' + message)
+      if(shinyConnected){
+        mainWindow.webContents.executeJavaScript(
+          'window.Shiny.setInputValue(\'R_STDOUT_ELECTRON\', atob(\'' + Buffer.from(message, 'ascii').toString('base64') + '\'), {priority: "event"});null;'
+        )
+      }
+    }
+    return(null);
+  }
   rShinyProcess = exec(NODER + ' -e <?<R_SHINY_FUNCTION>?>(options=list(port='+srv.address().port+'))',
      {
       env: {
@@ -179,7 +195,7 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     let data;
   
     while (data = this.read()) {
-      console.log(data);
+      logRMessages(data, 'stderr');
     }
   });
   rShinyProcess.stdout.on('readable', function() {
@@ -187,7 +203,7 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     let data;
   
     while (data = this.read()) {
-      console.log(data);
+      logRMessages(data, 'stdout');
     }
   });
 
@@ -200,11 +216,18 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     try {
       if (shinyRunning === false) {
         mainWindow.loadURL('http://127.0.0.1:' + srv.address().port);
-            await waitFor(i * 1000)
-
+        await waitFor(i * 1000)
         mainWindow.webContents.executeJavaScript('window.Shiny.shinyapp.isConnected()', true)
           .then((result) => {
-            mainWindow.webContents.executeJavaScript('window.Shiny.setInputValue("TerminateOnExit", true);')
+            mainWindow.webContents.executeJavaScript(`
+              $(document).on(\'shiny:sessioninitialized\', function(event) {
+                window.Shiny.setInputValue(\'TerminateOnExit\', true);
+              });
+              null;
+            `, true)
+            .then((result)=>{
+              shinyConnected = true
+            })
             shinyRunning = true
             mainWindow.maximize()
             mainWindow.focus()
@@ -220,17 +243,15 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     } catch (e) {
 
     }
-
-
   }
   await progressCallback({
     attempt: attempt,
     code: 'notresponding'
   })
 
-  try {
-    rShinyProcess.kill()
-  } catch (e) {}
+  // try {
+  //   rShinyProcess.kill()
+  // } catch (e) {}
 }
 
 
@@ -238,7 +259,11 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
 const splashScreenOptions = {
   width: 800,
   height: 600,
-  backgroundColor: backgroundColor
+  backgroundColor: backgroundColor,
+  webPreferences: {
+    nodeIntegration: true,
+    contextIsolation: false
+  }
 }
 
 const createSplashScreen = (filename) => {
@@ -314,11 +339,7 @@ app.on('ready', async () => {
     await emitSpashEvent('failed')
   }
 
-  await tryStartWebserver(0, progressCallback, onErrorStartup, onErrorLater, (url) => {
-
- 
-
-  })
+  await tryStartWebserver(0, progressCallback, onErrorStartup, onErrorLater, (url) => {})
 
 })
 
@@ -337,11 +358,14 @@ app.on('window-all-closed', () => {
 
 // App close handler, we want to kill shiny here and not on window close
 app.on('before-quit', () => {
-  // kill the process, just in case
-  // usually happens automatically if the main process is killed
+  // kill the process
+  console.log('Killing R process...')
   try {
     rShinyProcess.kill()
-  } catch (e) {}
+  } catch (e) {
+    console.log(e)
+  }
+  log.info('Application stopped');
 });
 
 app.on('activate', () => {

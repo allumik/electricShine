@@ -27,6 +27,7 @@
 #' @param mac_url url to mac OS tar.gz 
 #' @param r_bitness The bitness of the R installation you want to use (i386 or x64)
 #' @param tcp_port The port Electron and R are going to run at. Select 0 for a random port, avoid privileged ports
+#' @param pandoc_version pandoc version to install, as in `as.character(rmarkdown::pandoc_version())`. If blank, pandoc won't be installed
 #'
 #' @export
 #'
@@ -48,7 +49,8 @@ electrify <- function(app_name = NULL,
                       permission = FALSE,
                       mac_url = "https://mac.r-project.org/el-capitan/R-3.6-branch/R-3.6-branch-el-capitan-sa-x86_64.tar.gz",
                       r_bitness = c("x64", "i386"),
-                      tcp_port = 0
+                      tcp_port = 0,
+                      pandoc_version = NULL
                       ){
   
   
@@ -165,6 +167,12 @@ electrify <- function(app_name = NULL,
                               "Resources/library", 
                               fsep = "/")
   }  
+  
+  # Install pandoc -----
+  if(!is.null(pandoc_version)){
+    get_Pandoc(app_root_path, pandoc_version)
+    add_rstudio_pandoc_to_rprofile_site(app_root_path)
+  }
   
   # Install shiny app/package and dependencies ------------------------------
   
