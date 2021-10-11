@@ -5,6 +5,7 @@
 #' @param repo e.g. if repo_location is github: "chasemc/demoApp" ; if repo_location is local: "C:/Users/chase/demoApp"
 #' @param repos cran like repository package dependencies will be retrieved from
 #' @param package_install_opts further arguments to remotes::install_github, install_gitlab, install_bitbucket, or install_local
+#' @param dependency_install_opts optional arguments to remotes::install_deps, if NULL then remotes will not pre-install dependencies
 #' @param r_bitness The bitness of the R installation you want to use (i386 or x64)
 #'
 #' @return App name
@@ -41,7 +42,9 @@ install_user_app_new <- function(library_path = NULL,
                              repo = "chasemc/IDBacApp",
                              repos = cran_like_url,
                              package_install_opts = NULL,
-                             r_bitness = "x64"){
+                             dependency_install_opts = NULL,
+                             r_bitness = "x64",
+                             remotes_opts = NULL){
 
   accepted_sites <- c("github", "gitlab", "bitbucket", "local")
 
@@ -65,7 +68,9 @@ install_user_app_new <- function(library_path = NULL,
     # TODO: Maybe make this a regex?
     stop("install_user_app(repo) must be character with > 0 characters")
   }
-
+  if(!is.null(dependency_install_opts) & repo_location != "local"){
+    stop("Remotes only offers separate dependency install for local packages!")
+  }
   if (!is.null(package_install_opts)) {
     if (!is.list(package_install_opts)) {
       stop("package_install_opts  must be a list of arguments.")
@@ -83,7 +88,16 @@ install_user_app_new <- function(library_path = NULL,
                       lib = library_path)
                )
   )
-
+  if(!is.null(dependency_install_opts)){
+    dependency_install_opts <- c(repo, repos = repos,
+                                 c(dependency_install_opts,
+                                   list(force = TRUE,
+                                        lib = library_path)
+                                 )
+    )
+  }
+  
+  
   os <- electricShine::get_os()
 
   if (identical(os, "win")) {
@@ -122,13 +136,14 @@ install_user_app_new <- function(library_path = NULL,
   Sys.setenv(ESHINE_package_return=tmp_file2)
   
   arguments <- list(
-    libpaths =c(library_path, remotes_library),
+    libpaths = c(library_path, remotes_library),
     electricshine_library = electricshine_library,
-    passthr=passthr,
+    passthr = passthr,
     ESHINE_remotes_code=remotes_code,
-    ESHINE_package_return=tmp_file2
+    ESHINE_package_return=tmp_file2,
+    dependency_install_opts = dependency_install_opts
   )
-
+  
   message("Installing your Shiny package into electricShine framework.")
 
   system_install_pkgs_new(rscript_path, arguments)
@@ -208,8 +223,6 @@ copy_electricshine_package <- function(){
 #' @return nothing
 #'
 system_install_pkgs_new <- function(rscript_path, arguments){
-  
-  os <- electricShine::get_os()
   arg_file <- tempfile()
   save(arguments, file = arg_file)
   r_file <- tempfile()

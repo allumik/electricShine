@@ -40,7 +40,7 @@ const WINDOWS = "win32";
 
 const fs = require('fs');
 const backgroundColor = '#2c3e50'
-//Menu.setApplicationMenu(null);
+Menu.setApplicationMenu(null);
 
 const waitFor = (milliseconds) => {
   return new Promise((resolve, _reject) => {

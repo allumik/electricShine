@@ -14,7 +14,8 @@ install_package_new <- function(arguments){
   remotes_code <- getFromNamespace(remotes_code,
                                    ns = "remotes")
 
-  
+  if(!is.null(arguments$dependency_install_opts))
+    do.call(remotes::install_deps, arguments$dependency_install_opts)
   z <- do.call(remotes_code, passthr)
   # the remotes package returns the name of the installed package
   # but when called from system2, at least on mac,
