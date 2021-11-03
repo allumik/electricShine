@@ -44,6 +44,7 @@ install_user_app_new <- function(library_path = NULL,
                              package_install_opts = NULL,
                              dependency_install_opts = NULL,
                              r_bitness = "x64",
+                             include_remotes = FALSE,
                              remotes_opts = NULL){
 
   accepted_sites <- c("github", "gitlab", "bitbucket", "local")
@@ -119,11 +120,15 @@ install_user_app_new <- function(library_path = NULL,
   }
 
 
-
-  # We're copying remotes to the app library since some apps require remotes
-  # To-do: check if package to be installed (or any of its dependencies, like golem) requires remotes
-  # If not use the tempfile again
-  remotes_library <- copy_remotes_package(library_path)
+  if(include_remotes){
+    remotes_location <- library_path
+  }else{
+    remotes_location <- file.path(tempdir(),
+                                    "electricShine",
+                                    "templib")
+  }
+   
+  remotes_library <- copy_remotes_package(remotes_location)
 
   electricshine_library <- installed.packages()["electricShine", "LibPath"]
   # We're not using copy_electricshine_package() since that isn't necessary
@@ -141,7 +146,8 @@ install_user_app_new <- function(library_path = NULL,
     passthr = passthr,
     ESHINE_remotes_code=remotes_code,
     ESHINE_package_return=tmp_file2,
-    dependency_install_opts = dependency_install_opts
+    dependency_install_opts = dependency_install_opts,
+    remotes_location = remotes_location
   )
   
   message("Installing your Shiny package into electricShine framework.")

@@ -9,11 +9,11 @@ install_package_new <- function(arguments){
   remotes_code <- arguments$ESHINE_remotes_code
   return_file_path <-  arguments$ESHINE_package_return
   passthr <- arguments$passthr
-
+  require(remotes, lib.loc = arguments$remotes_location)
   # getFromNamespace should not be used in production code...
   remotes_code <- getFromNamespace(remotes_code,
                                    ns = "remotes")
-
+  
   if(!is.null(arguments$dependency_install_opts))
     do.call(remotes::install_deps, arguments$dependency_install_opts)
   z <- do.call(remotes_code, passthr)

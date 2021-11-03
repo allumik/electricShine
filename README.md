@@ -10,7 +10,7 @@ Changed features are the loading screen, mostly reverted some changes from the o
 
 Bugfixes include missing variables when installing node, errors with package installation when attempting to use 32-bits R, not closing R properly when quitting the Electron app, building the Electron app failing if the app was on a different drive than the drive `cmd` opened on by default (always add `/D` to `cd` on windows), webpack errors, and I'm pretty sure I'm missing some.
 
-Fixed in a dubious way includes the app now includes devtools always, since the package failed to install it because it requires devtools itself to install stuff, and all golem apps require devtools since golem requires it. Probably should use pak instead to install packages or do recursive dependency checking, but I failed to get that working...
+Added an option to include the remotes package, which is used to install packages, but also is required used by all Shiny apps that use Golem. If remotes is included, the local package is copied instead of downloading a fresh copy from the chosen source, since remotes is used to download such packages.
 
 Please refer to the original package for support/feature requests. I will try to support development of this as long as my schedule allows for it. This is a one-off fork and not intended for more development.
 

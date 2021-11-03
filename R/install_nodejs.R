@@ -62,7 +62,7 @@ install_nodejs <- function(node_url = "https://nodejs.org/dist",
 
   if (!base::isFALSE(node_exists) && !base::isFALSE(npm_exists)) {
 
-    message("Skipping install_nodejs(), nodejs alreagy installed.")
+    message("Skipping install_nodejs(), nodejs already installed.")
 
   } else {
 
