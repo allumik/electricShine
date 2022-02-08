@@ -168,7 +168,7 @@ const tryStartWebserver = async (attempt, progressCallback, onErrorStartup,
     }
     return(null);
   }
-  rShinyProcess = exec(NODER + ' -e <?<R_SHINY_FUNCTION>?>(options=list(port='+srv.address().port+'))',
+  rShinyProcess = exec('"' + NODER + '" -e <?<R_SHINY_FUNCTION>?>(options=list(port='+srv.address().port+'))',
      {
       env: {
         //Necessary for letting R know where it is and ensure we're not using another R 
