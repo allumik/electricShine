@@ -33,6 +33,7 @@ const {
 } = require('electron');
 
 import path from "path";
+import fs from "fs";
 const { exec } = require('child_process');
 
 const MACOS = "darwin"; // Erikvona: I'm 99% sure the MacOS support is now even more thoroughly broken
