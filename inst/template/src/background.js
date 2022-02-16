@@ -39,7 +39,7 @@ const { exec } = require('child_process');
 const MACOS = "darwin"; // Erikvona: I'm 99% sure the MacOS support is now even more thoroughly broken
 const WINDOWS = "win32";
 
-const fs = require('fs');
+// const fs = require('fs');
 const backgroundColor = '#2c3e50'
 Menu.setApplicationMenu(null);
 
